@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="Me.App.Core/Me.App.Core.csproj" Id="b3ac27aa-7529-4195-b263-78deb2d70b5b" />
+  <Project Path="Me.App.Infrastructure/Me.App.Infrastructure.csproj" Id="da10a429-f478-4e5f-b4c0-084a76c99a04" />
   <Project Path="Me.App/Me.App.csproj" />
 </Solution>

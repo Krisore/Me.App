@@ -54,6 +54,11 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
     </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Me.App.Core\Me.App.Core.csproj" />
+      <ProjectReference Include="..\Me.App.Infrastructure\Me.App.Infrastructure.csproj" />
+    </ItemGroup>
 	<Target Name="Tailwind" BeforeTargets="Build">
 		<Message Importance="high" Text="Starting Tailwind CSS Build..." />
 		<Exec Command="npx @tailwindcss/cli -i &quot;$(ProjectDir)wwwroot\styles\app.css&quot; -o &quot;$(ProjectDir)wwwroot\styles\app.min.css&quot;" WorkingDirectory="$(ProjectDir)" />
