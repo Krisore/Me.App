@@ -1,0 +1,138 @@
+﻿@page "/upload"
+@using Me.App.Core.DocumentsAgg
+@using Me.App.Infrastructure
+@inject IDocumentService DocumentService
+@inject NavigationManager NavManager
+@layout SubPageLayout
+<div class="flex flex-col gap-4 pb-10">
+    <h1 class="text-2xl font-bold text-gray-800">Add Document</h1>
+    <p class="text-sm text-gray-500">Securely store your ID, forms, or certificates offline.</p>
+
+    <div class="mt-2 flex flex-col gap-3">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Document Title</label>
+            <input @bind="docTitle" type="text" placeholder="e.g., PhilHealth ID" class="mt-1 block w-full rounded-xl border border-gray-300 p-3 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Category</label>
+            <select @bind="docCategory" class="mt-1 block w-full rounded-xl border border-gray-300 p-3 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+                <option value="">Select Category...</option>
+                <option value="Government">Government ID / Forms</option>
+                <option value="Academics">Academics</option>
+                <option value="Professional">Professional / Work</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Notes / Content</label>
+            <textarea @bind="docContent" rows="3" placeholder="Any extra details..." class="mt-1 block w-full rounded-xl border border-gray-300 p-3 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"></textarea>
+        </div>
+
+        <div class="mt-2">
+            <label class="mb-1 block text-sm font-medium text-gray-700">Attachment</label>
+            <button @onclick="PickFileAsync" class="w-full rounded-xl border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:bg-gray-50">
+                @if (selectedFileResult == null)
+                {
+                    <span class="text-gray-500">Tap to browse files or snap a photo</span>
+                }
+                else
+                {
+                    <span class="font-semibold text-green-600">File attached: @selectedFileResult.FileName</span>
+                }
+            </button>
+        </div>
+
+        <button @onclick="SaveDocumentAsync" disabled="@isSaving" class="mt-6 w-full rounded-full bg-gray-800 p-4 font-bold text-white shadow-lg transition-transform hover:bg-gray-900 active:scale-95 disabled:bg-gray-400">
+            @if (isSaving)
+            {
+                <span>Encrypting & Saving...</span>
+            }
+            else
+            {
+                <span>Save to Secure Vault</span>
+            }
+        </button>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p class="mt-2 text-center text-sm text-red-500">@errorMessage</p>
+        }
+    </div>
+</div>
+
+@code {
+    private string docTitle = "";
+    private string docCategory = "";
+    private string docContent = "";
+    private string errorMessage = "";
+    private bool isSaving = false;
+
+    // MAUI specific class to hold the picked file in memory
+    private FileResult? selectedFileResult;
+
+    private async Task PickFileAsync()
+    {
+        try
+        {
+            // Opens the native device file picker (works on Android, iOS, Windows, Mac)
+            selectedFileResult = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Select a Document or Image"
+            });
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to pick file: " + ex.Message;
+        }
+    }
+
+    private async Task SaveDocumentAsync()
+    {
+        if (string.IsNullOrWhiteSpace(docTitle))
+        {
+            errorMessage = "Title is required.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = "";
+        StateHasChanged(); // Force UI update to show loading state
+
+        try
+        {
+            // 1. Create the main Document Entity
+            var newDocument = new Document(docTitle, docContent, docCategory);
+
+            // 2. Handle the file attachment (Blob) if the user picked one
+            if (selectedFileResult != null)
+            {
+                // We MUST copy the file from the public gallery into the app's secure internal storage
+                string secureLocalPath = Path.Combine(FileSystem.AppDataDirectory, selectedFileResult.FileName);
+
+                using (var stream = await selectedFileResult.OpenReadAsync())
+                using (var newStream = File.OpenWrite(secureLocalPath))
+                {
+                    await stream.CopyToAsync(newStream);
+                }
+
+                // Create the Blob entity and attach it to the Document
+                var blob = new Blob(secureLocalPath, secureLocalPath, selectedFileResult.ContentType); // 0 because DocumentId is set inside AddBlob/Database logic
+
+                newDocument.AddBlob(blob);
+            }
+
+            // 3. Save to the Encrypted SQLite Database
+            await DocumentService.SaveDocumentAsync(newDocument);
+            NavManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error saving document: " + ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

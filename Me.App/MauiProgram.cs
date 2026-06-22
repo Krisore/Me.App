@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using Flowbite.Services;
+using Me.App.Infrastructure;
 using Microsoft.Extensions.Logging;
 
 namespace Me.App
@@ -25,6 +26,8 @@ namespace Me.App
     		builder.Services.AddBlazorWebViewDeveloperTools();
     		builder.Logging.AddDebug();
 #endif
+
+            builder.Services.AddInfrastructure();
             var app = builder.Build();
             SetupBlazorWebView();
             return app;

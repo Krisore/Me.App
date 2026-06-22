@@ -1,7 +1,9 @@
 ﻿@using Flowbite.Components.Chat
 @using Flowbite.Icons
+@using Me.App.Core.UserAgg
 @inherits LayoutComponentBase
 @inject IJSRuntime JS
+
 <div class="relative flex h-screen flex-col overflow-hidden bg-[#fff8f4]">
 
     <div id="floating-header" class="header-safe pointer-events-none fixed top-0 right-0 left-0 z-40 px-4 transition-transform duration-500 ease-in-out">
@@ -14,23 +16,33 @@
             </button>
         </header>
     </div>
+
     <main id="main-scroll-container" class="relative z-0 flex-1 overflow-x-hidden overflow-y-auto pt-28 pb-32">
         <div class="mx-auto h-full max-w-md px-4">
             @Body
         </div>
     </main>
+
     <div class="home-indicator-safe fixed right-4 bottom-6 left-4 z-50">
         <nav class="mx-auto flex max-w-md items-center justify-between rounded-[2rem] border border-gray-50 bg-white p-2 shadow-xl shadow-gray-200/60">
-            
+
             <NavLink href="/" class="nav-link" Match="NavLinkMatch.All">
                 <div class="nav-icon-wrapper"><HomeIcon /></div>
                 <span class="nav-text">Home</span>
             </NavLink>
-            
 
             <NavLink href="/search" class="nav-link">
                 <div class="nav-icon-wrapper"><SearchIcon /></div>
                 <span class="nav-text">Search</span>
+            </NavLink>
+
+            <NavLink href="/upload" class="nav-link">
+                <div class="nav-icon-wrapper">
+                    <svg class="h-6 w-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14" />
+                    </svg>
+                </div>
+                <span class="nav-text">Add</span>
             </NavLink>
 
             <NavLink href="/saved" class="nav-link">
@@ -46,7 +58,7 @@
                 <div class="nav-icon-wrapper"><UserIcon /></div>
                 <span class="nav-text">Profile</span>
             </NavLink>
-            
+
         </nav>
     </div>
 </div>
@@ -115,10 +127,14 @@
 
 
 @code {
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
+        {
+
             await JS.InvokeVoidAsync("meUI.initScrollHeader", "main-scroll-container", "floating-header");
+        };
 
 
 

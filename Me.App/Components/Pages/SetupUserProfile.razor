@@ -1,0 +1,140 @@
+﻿@page "/setup-profile"
+@layout SplashLayout
+@using Me.App.Core.UserAgg
+@inject IUserService UserService
+@inject NavigationManager NavManager
+
+<div class="font-body flex min-h-screen w-full flex-col items-center justify-start bg-neutral-base p-6 pt-12">
+    
+    <div class="mb-6 w-full max-w-sm text-center">
+        <h1 class="font-headline text-2xl font-extrabold text-neutral-dark">Claim Your Identity</h1>
+        <p class="text-sm text-neutral-dark/70">Design your offline .me card.</p>
+    </div>
+
+    <div class="mb-10 w-full max-w-sm">
+        <div class="relative flex aspect-[1.58/1] w-full flex-col justify-between overflow-hidden rounded-2xl bg-primary p-6 shadow-2xl shadow-primary/40 transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <span class="font-headline text-xl font-black text-neutral-surface">.me</span>
+                <svg class="h-6 w-6 text-secondary" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" d="M12 20a7.966 7.966 0 0 1-5.002-1.756l.002.001v-.683c0-1.794 1.492-3.25 3.333-3.25h3.334c1.84 0 3.333 1.456 3.333 3.25v.683A7.966 7.966 0 0 1 12 20ZM2 12C2 6.477 6.477 2 12 2s10 4.477 10 10c0 5.5-4.44 9.963-9.932 10h-.138C6.438 21.962 2 17.5 2 12Zm10-5c-1.84 0-3.333 1.455-3.333 3.25S10.159 13.5 12 13.5c1.84 0 3.333-1.455 3.333-3.25S13.841 7 12 7Z" clip-rule="evenodd"/>
+                </svg>
+            </div>
+            
+            <div class="flex items-end gap-4">
+                <div class="h-20 w-20 overflow-hidden rounded-full border-2 border-secondary bg-neutral-surface/10 backdrop-blur-sm">
+                    <img src="@CurrentAvatarUrl" alt="Avatar Preview" class="h-full w-full object-cover" />
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-headline text-lg font-bold text-neutral-surface">
+                        @(string.IsNullOrWhiteSpace(nickname) ? "Your Name" : nickname)
+                    </span>
+                    <span class="text-sm font-medium text-secondary">
+                        @@@(string.IsNullOrWhiteSpace(nickname) ? "handle" : nickname.ToLower().Replace(" ", ""))
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-sm space-y-6">
+        
+        <div>
+            <div class="mb-2 flex items-center justify-between">
+                <label class="text-sm font-bold text-neutral-dark">Choose an Avatar</label>
+                <button @onclick="GenerateNewAvatars" class="text-xs font-bold text-tertiary transition hover:text-tertiary-dark">Shuffle</button>
+            </div>
+            <div class="flex justify-between gap-2 overflow-x-auto pb-2">
+                @foreach (var seed in avatarSeeds)
+                {
+                    <button @onclick="() => SelectAvatar(seed)" 
+                            class="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 transition-all active:scale-95 @(selectedSeed == seed ? "border-secondary ring-2 ring-secondary/50 scale-110" : "border-transparent bg-neutral-dark/5 hover:bg-neutral-dark/10")">
+                        <img src="@($"https://api.dicebear.com/9.x/micah/svg?seed={seed}&backgroundColor=transparent")" class="h-full w-full" />
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div>
+            <label class="mb-1 block text-sm font-bold text-neutral-dark">Your Handle</label>
+            <div class="flex items-center overflow-hidden rounded-xl border-2 border-primary/10 bg-neutral-surface transition-colors focus-within:border-secondary">
+                <div class="flex h-12 items-center justify-center bg-primary/5 px-4">
+                    <span class="font-headline font-bold text-primary/50">@@</span>
+                </div>
+                <input type="text" @bind="nickname" @bind:event="oninput" class="h-12 w-full bg-transparent px-3 text-neutral-dark outline-none placeholder:text-neutral-dark/30" placeholder="krisore" />
+            </div>
+        </div>
+
+        <button @onclick="SaveProfile" disabled="@isSaving" class="group relative mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary p-4 font-bold text-neutral-surface shadow-lg shadow-primary/30 transition-all hover:bg-primary-dark active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100">
+            @if (isSaving)
+            {
+                <span class="animate-pulse">Securing Identity...</span>
+            }
+            else
+            {
+                <span>Create Vault</span>
+                <svg class="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4"/>
+                </svg>
+            }
+        </button>
+    </div>
+</div>
+
+@code {
+    private string nickname = string.Empty;
+    private string selectedSeed = "Felix";
+    private bool isSaving = false;
+    private List<string> avatarSeeds = new();
+
+    private string CurrentAvatarUrl => $"https://api.dicebear.com/9.x/micah/svg?seed={selectedSeed}&backgroundColor=transparent";
+
+    protected override void OnInitialized()
+    {
+        GenerateNewAvatars();
+    }
+
+    private void GenerateNewAvatars()
+    {
+        var random = new Random();
+        var names = new[] { "Felix", "Aneka", "Jasper", "Luna", "Milo", "Oliver", "Cleo", "Leo", "Bella", "Simba", "Chloe", "Max" };
+        avatarSeeds = names.OrderBy(x => random.Next()).Take(5).ToList();
+        selectedSeed = avatarSeeds.First();
+    }
+
+    private void SelectAvatar(string seed)
+    {
+        selectedSeed = seed;
+    }
+
+    private async Task SaveProfile()
+    {
+        if (string.IsNullOrWhiteSpace(nickname)) return;
+        
+        isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            using var client = new HttpClient();
+            var svgBytes = await client.GetByteArrayAsync(CurrentAvatarUrl);
+            var localFileName = $"avatar_{Guid.NewGuid()}.svg";
+            var localFilePath = Path.Combine(FileSystem.AppDataDirectory, localFileName);
+            await File.WriteAllBytesAsync(localFilePath, svgBytes);
+            var profile = new User
+            {
+                Nickname = "@" + nickname.TrimStart('@').ToLower().Replace(" ", ""),
+                ProfileImagePath = localFilePath
+            };
+
+            await UserService.SaveUserAsync(profile);
+            
+            // 4. Send them to the Home Dashboard
+            NavManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to save profile: {ex.Message}");
+            isSaving = false;
+        }
+    }
+}

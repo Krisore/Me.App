@@ -1,11 +1,181 @@
 ﻿@page "/"
+@using Me.App.Core.DocumentsAgg
+@using Me.App.Core.UserAgg
+@using Me.App.Infrastructure
+@inject IDocumentService DocumentService
+@inject IUserService UserService
+@inject NavigationManager NavManager
 
+@if (_isCheckingProfile)
+{
+    <div class="flex h-full items-center justify-center">
+        <div class="animate-pulse text-gray-400">Opening Vault...</div>
+    </div>
+}
+else
+{
+    <div class="flex flex-col gap-6 pb-10">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Good morning,</p>
+                <h1 class="text-2xl font-bold text-gray-800">Your Digital Vault</h1>
+            </div>
+        </div>
 
-@*TODO: Implement the Virtual Card with flip.*@
+        <div class="perspective-1000 w-full" @onclick="ToggleCardFlip">
+            <div class="transform-style-3d relative h-56 w-full transition-transform duration-700 @(isCardFlipped ? "rotate-y-180" : "")">
 
+                <div class="bg-gradient-to-br absolute inset-0 rounded-2xl from-gray-900 via-gray-800 to-black p-6 text-white shadow-xl backface-hidden">
+                    <div class="flex h-full flex-col justify-between">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h2 class="text-xl font-bold tracking-widest">.ME IDENTITY</h2>
+                                <p class="text-xs text-gray-400">Tap to flip</p>
+                            </div>
 
+                            <div class="h-14 w-14 overflow-hidden rounded-full border-2 border-gray-600 bg-white/10 backdrop-blur-sm">
+                                @if (!string.IsNullOrEmpty(_userProfile?.ProfileImagePath))
+                                {
+                                    <img src="@_userProfile.ProfileImagePath" class="h-full w-full object-cover" alt="User Avatar" />
+                                }
+                            </div>
+                        </div>
 
+                        <div>
+                            <p class="text-lg font-semibold tracking-wide">
+                                @(string.IsNullOrWhiteSpace(_userProfile?.Nickname) ? "YOUR NAME" : _userProfile.Nickname.ToUpper())
+                            </p>
+                            <p class="font-mono text-sm text-gray-400">ID: ME-@(_userProfile?.Id.ToString("D4") ?? "0000")</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="absolute inset-0 flex rotate-y-180 items-center justify-between rounded-2xl border-2 border-gray-100 bg-white p-6 shadow-xl backface-hidden">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-gray-800">Scan to Verify</h3>
+                        <p class="mt-1 text-xs text-gray-500">This QR contains your verified public profile.</p>
+                    </div>
+                    <div class="flex h-24 w-24 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 p-2">
+                        <svg class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-gray-800">Recent Documents</h2>
+                <button class="text-sm font-semibold text-blue-600">View All</button>
+            </div>
+
+            @if (recentDocuments == null)
+            {
+                <div class="flex animate-pulse flex-col gap-3">
+                    <div class="h-20 w-full rounded-xl bg-gray-200"></div>
+                    <div class="h-20 w-full rounded-xl bg-gray-200"></div>
+                </div>
+            }
+            else if (!recentDocuments.Any())
+            {
+                <div class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 py-10">
+                    <svg class="mb-3 h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="text-sm font-medium text-gray-500">Your vault is empty</p>
+                    <a href="/upload" class="mt-2 text-sm font-bold text-blue-600">Add a document</a>
+                </div>
+            }
+            else
+            {
+                <div class="flex flex-col gap-3">
+                    @foreach (var doc in recentDocuments.Take(5))
+                    {
+                        <div class="transition-active flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm active:scale-95">
+                            <div class="flex items-center gap-4">
+                                <div class="bg-opacity-10 flex h-12 w-12 items-center justify-center @(GetCategoryColor(doc.Category)) rounded-full">
+                                    <svg class="h-6 w-6 @(GetCategoryTextColor(doc.Category))" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="line-clamp-1 font-bold text-gray-800">@doc.Title</h3>
+                                    <p class="text-xs text-gray-500">@doc.Category • @doc.CreatedAt.ToString("MMM dd, yyyy")</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<style>
+    .perspective-1000 {
+        perspective: 1000px;
+    }
+
+    .transform-style-3d {
+        transform-style: preserve-3d;
+    }
+
+    .backface-hidden {
+        backface-visibility: hidden;
+    }
+
+    .rotate-y-180 {
+        transform: rotateY(180deg);
+    }
+</style>
 
 @code {
+    private bool _isCheckingProfile = true;
+    private bool isCardFlipped = false;
+    private List<Document>? recentDocuments;
 
+    // We added this variable to hold the user's data!
+    private User? _userProfile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isCheckingProfile = true;
+        await Task.Delay(300);
+
+        // Fetch and store the profile
+        _userProfile = await UserService.GetUserAsync();
+
+        if (_userProfile == null)
+        {
+            await Task.Delay(50); // Keep our MAUI micro-delay hack to prevent crashes
+            NavManager.NavigateTo("/welcome", true);
+            return;
+        }
+
+        recentDocuments = await DocumentService.GetAllDocumentsAsync();
+        _isCheckingProfile = false;
+    }
+
+    private void ToggleCardFlip()
+    {
+        isCardFlipped = !isCardFlipped;
+    }
+
+    private string GetCategoryColor(string category) => category switch
+    {
+        "Government" => "bg-blue-500",
+        "Academics" => "bg-purple-500",
+        "Professional" => "bg-green-500",
+        _ => "bg-gray-500"
+    };
+
+    private string GetCategoryTextColor(string category) => category switch
+    {
+        "Government" => "text-blue-500",
+        "Academics" => "text-purple-500",
+        "Professional" => "text-green-500",
+        _ => "text-gray-500"
+    };
 }

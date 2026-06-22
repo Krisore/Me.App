@@ -9,14 +9,15 @@
 /* --- THE HOOMAN DESIGN SYSTEM --- */
 @theme {
     /* Colors */
-    --color-primary: #5facac;
-    --color-primary-dark: #36767a;
-    --color-secondary: #8A9A5B;
-    --color-secondary-dark: #657340;
-    --color-tertiary: #E8B059;
-    --color-neutral-base: #FDF9F0;
+    --color-primary: #283044;
+    --color-primary-dark: #0F172A;
+    --color-secondary: #2DD4BF;
+    --color-secondary-dark: #005047;
+    --color-tertiary: #3B82F6;
+    --color-tertiary-dark: #1D4ED8;
+    --color-neutral-base: #F8F5F2;
     --color-neutral-surface: #FFFFFF;
-    --color-neutral-dark: #2D2422; 
+    --color-neutral-dark: #2D2422;
     /* Typography */
     --font-headline: "Fira Code", sans-serif;
     --font-body: "Fira Code", sans-serif;

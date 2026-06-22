@@ -1,0 +1,33 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
+<div class="relative flex h-screen flex-col bg-[#fff8f4]">
+
+    <div class="header-safe z-40 bg-[#fff8f4] px-4 pt-4 pb-2">
+        <button @onclick="GoBack" class="flex items-center justify-center rounded-full border border-gray-100 bg-white p-3 text-gray-800 shadow-sm transition-transform active:scale-95">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+    </div>
+
+    <main class="flex-1 overflow-x-hidden overflow-y-auto pb-10">
+        <div class="mx-auto mt-2 h-full max-w-md px-4">
+            @Body
+        </div>
+    </main>
+
+</div>
+
+<style>
+    .header-safe {
+        padding-top: calc(env(safe-area-inset-top, 24px) + 12px);
+    }
+</style>
+
+@code {
+    private async Task GoBack()
+    {
+        await JS.InvokeVoidAsync("history.back");
+    }
+}

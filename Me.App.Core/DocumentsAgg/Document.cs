@@ -1,7 +1,6 @@
 ﻿using SQLite;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Me.App.Core.DocumentsAgg;
 
@@ -9,42 +8,44 @@ public class Document
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
-    public string Title { get; private set; }
-    public string Content { get; private set; }
-    public DateTime CreatedAt { get; private set; }
-    public DateTime UpdatedAt { get; private set; }
-    public string Category { get; private set; } = string.Empty;
 
+    // WARNING: These MUST be 'set' (public), not 'private set', otherwise SQLite ignores them!
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public string Category { get; set; } = string.Empty;
 
     [Ignore]
-    public List<Blob> Blobs { get; private set; } = [];
-    
-    public bool WithVirtualCard { get; private set; }
-    public Document()
-    {
+    public List<Blob> Blobs { get; set; } = new();
 
-    }
-    public Document( string title, string content)
+    public bool WithVirtualCard { get; set; }
+
+    // Required for SQLite
+    public Document() { }
+
+    public Document(string title, string description, string category)
     {
         Title = title;
-        Content = content;
+        Description = description; // Mapped to your new property name
+        Category = category;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public virtual void UpdateContent(string newContent)
+    // Renamed this method to match your new property
+    public virtual void UpdateDescription(string newDescription)
     {
-        Content = newContent;
+        Description = newDescription;
         UpdatedAt = DateTime.UtcNow;
     }
-
 
     public virtual void AddBlob(Blob blob)
     {
         Blobs.Add(blob);
     }
 
-    public virtual void RemoveBlob(Blob blob) 
+    public virtual void RemoveBlob(Blob blob)
     {
         Blobs.Remove(blob);
     }
