@@ -1,0 +1,330 @@
+﻿@page "/vehicle/{id:int}"
+@using Me.App.Core.VehicleAggregate
+@layout SubPageLayout
+@inject IVehicleService VehicleService
+@inject NavigationManager NavManager
+<div class="flex flex-col pb-10">
+
+    @if (isLoading)
+    {
+        <div class="flex animate-pulse flex-col gap-6">
+            <div class="h-56 w-full rounded-2xl bg-gray-200"></div>
+            <div class="mt-4 flex gap-4 border-b border-gray-200 pb-2">
+                <div class="h-6 w-20 rounded bg-gray-200"></div>
+                <div class="h-6 w-20 rounded bg-gray-200"></div>
+                <div class="h-6 w-20 rounded bg-gray-200"></div>
+            </div>
+            <div class="mt-2 h-20 w-full rounded-xl bg-gray-200"></div>
+            <div class="h-20 w-full rounded-xl bg-gray-200"></div>
+        </div>
+    }
+    else if (vehicle != null)
+    {
+        <div class="mt-2 mb-4 flex items-center justify-between">
+            <h1 class="text-xl font-bold text-gray-900">Vehicle Profile</h1>
+            <button @onclick="OpenEditModal" class="rounded-full bg-gray-100 p-2 text-gray-500 transition-colors hover:text-blue-600 active:scale-95">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="perspective-1000 w-full" @onclick="ToggleCardFlip">
+            <div class="transform-style-3d relative h-56 w-full transition-transform duration-700 @(isCardFlipped ? "rotate-y-180" : "")">
+
+                <div class="absolute inset-0 rounded-2xl p-6 text-white shadow-xl backface-hidden"
+                     style="background: linear-gradient(135deg, @vehicle.PrimaryColor, @vehicle.SecondaryColor);">
+
+                    <div class="flex h-full flex-col justify-between">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h2 class="text-xl font-bold tracking-widest opacity-90" style="color: @vehicle.AccentColor"> @(string.IsNullOrEmpty(vehicle.Nickname) ? vehicle.Name : vehicle.Nickname)</h2>
+                                <p class="text-xs opacity-70">Tap to flip</p>
+                            </div>
+
+                            <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 bg-white/20 backdrop-blur-md"
+                                 style="border-color: @vehicle.AccentColor">
+                                @if (vehicle.Type?.ToLower() == "motorcycle" || vehicle.Type?.ToLower() == "bike")
+                                {
+                                    <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h8M8 11h8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                }
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-xl font-semibold tracking-wide text-white drop-shadow-md">
+                                @vehicle.Brand.ToUpper() @(vehicle.Name?.ToUpper())
+                            </p>
+                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                <p class="font-mono text-sm opacity-90">PLATE: <span class="font-bold">@vehicle.PlateNumber</span></p>
+                                <p class="font-mono text-sm opacity-90">ODO: <span class="font-bold">@vehicle.CurrentOdometer.ToString("N0") @vehicle.DistanceUnit</span></p>
+                            </div>
+                            <p class="mt-1 font-mono text-xs opacity-75">VIN/SN: @vehicle.SerialOrVinNumber</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="absolute inset-0 flex rotate-y-180 items-center justify-between rounded-2xl border-2 border-gray-100 bg-white p-6 shadow-xl backface-hidden">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-gray-800">Service QR</h3>
+                        <p class="mt-1 text-xs text-gray-500">Scan to view maintenance history.</p>
+                    </div>
+                    <div class="flex h-24 w-24 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 p-2">
+                        <svg class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="mt-8 mb-4 border-b border-gray-200">
+            <ul class="-mb-px flex flex-wrap text-center text-sm font-medium text-gray-500">
+                <li class="me-2">
+                    <button @onclick="@(() => activeTab = "Tasks")" class="inline-block p-4 border-b-2 rounded-t-lg transition-colors @(activeTab == "Tasks" ? "text-blue-600 border-blue-600 active" : "border-transparent hover:text-gray-600 hover:border-gray-300")">
+                        Tasks
+                    </button>
+                </li>
+                <li class="me-2">
+                    <button @onclick="@(() => activeTab = "History")" class="inline-block p-4 border-b-2 rounded-t-lg transition-colors @(activeTab == "History" ? "text-blue-600 border-blue-600 active" : "border-transparent hover:text-gray-600 hover:border-gray-300")">
+                        History
+                    </button>
+                </li>
+                <li class="me-2">
+                    <button @onclick="@(() => activeTab = "Glovebox")" class="inline-block p-4 border-b-2 rounded-t-lg transition-colors @(activeTab == "Glovebox" ? "text-blue-600 border-blue-600 active" : "border-transparent hover:text-gray-600 hover:border-gray-300")">
+                        Glovebox
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div>
+            @if (activeTab == "Tasks")
+            {
+                <button type="button" class="mb-4 w-full rounded-lg border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 focus:outline-none">
+                    + Add Maintenance Task
+                </button>
+
+                <div class="block w-full rounded-lg border border-gray-200 bg-white p-4 shadow hover:bg-gray-100">
+                    <div class="mb-2 flex items-center justify-between">
+                        <h5 class="text-md font-bold tracking-tight text-gray-900">Synthetic Oil Change</h5>
+                        <span class="rounded border border-red-400 bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">Due Now</span>
+                    </div>
+                    <p class="text-sm font-normal text-gray-700">Every 5,000 km</p>
+                </div>
+            }
+            else if (activeTab == "History")
+            {
+                <ol class="relative ml-3 border-s border-gray-200">
+                    <li class="ms-4 mb-6">
+                        <div class="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-gray-200"></div>
+                        <time class="mb-1 text-sm leading-none font-normal text-gray-400">June 12, 2024 • 45,000 km</time>
+                        <h3 class="text-md font-semibold text-gray-900">Oil & Filter Change</h3>
+                        <p class="mb-4 text-sm font-normal text-gray-500">Used Shell Fully Synthetic 5W-40. Replaced air filter.</p>
+                    </li>
+                    <li class="ms-4 mb-6">
+                        <div class="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-gray-200"></div>
+                        <time class="mb-1 text-sm leading-none font-normal text-gray-400">March 05, 2024 • 41,200 km</time>
+                        <h3 class="text-md font-semibold text-gray-900">Brake Pad Replacement</h3>
+                        <p class="text-sm font-normal text-gray-500">Replaced front and rear ceramic brake pads.</p>
+                    </li>
+                </ol>
+            }
+            else if (activeTab == "Glovebox")
+            {
+                <div class="flex h-48 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
+                    <p class="mb-2 text-sm text-gray-500">No documents attached yet.</p>
+                    <button type="button" class="rounded-lg border border-blue-700 px-5 py-2.5 text-center text-sm font-medium text-blue-700 transition-colors hover:bg-blue-800 hover:text-white focus:ring-4 focus:ring-blue-300 focus:outline-none">
+                        Upload OR/CR
+                    </button>
+                </div>
+            }
+        </div>
+
+
+        @if (isEditing)
+        {
+            <div class="fixed inset-0 z-50 flex items-end justify-center bg-gray-900/60 backdrop-blur-sm sm:items-center">
+                <div class="h-[85vh] w-full max-w-md transform overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl transition-all sm:h-auto sm:rounded-3xl">
+
+                    <div class="mb-5 flex items-center justify-between border-b pb-3">
+                        <h3 class="text-xl font-bold text-gray-900">Edit Vehicle Profile</h3>
+                        <button @onclick="CloseEditModal" class="inline-flex items-center rounded-lg p-1.5 text-gray-400 hover:bg-gray-200">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+
+                    <form class="flex flex-col gap-4" @onsubmit:preventDefault>
+
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                            <h4 class="mb-3 text-sm font-bold text-gray-900">Card Customization</h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="flex flex-col items-center">
+                                    <label class="mb-1 text-xs text-gray-500">Primary</label>
+                                    <input type="color" @bind="editPrimaryColor" class="h-10 w-full cursor-pointer rounded border-0 p-0" />
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <label class="mb-1 text-xs text-gray-500">Secondary</label>
+                                    <input type="color" @bind="editSecondaryColor" class="h-10 w-full cursor-pointer rounded border-0 p-0" />
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <label class="mb-1 text-xs text-gray-500">Accent</label>
+                                    <input type="color" @bind="editAccentColor" class="h-10 w-full cursor-pointer rounded border-0 p-0" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-gray-900">Nickname</label>
+                            <input type="text" @bind="editNickname" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500" />
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Plate Number</label>
+                                <input type="text" @bind="editPlateNumber" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 uppercase focus:border-blue-500 focus:ring-blue-500" />
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-gray-900">Distance Unit</label>
+                                <select @bind="editDistanceUnit" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="km">Kilometers (km)</option>
+                                    <option value="mi">Miles (mi)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-gray-900">VIN / Serial Number</label>
+                            <input type="text" @bind="editVin" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 uppercase focus:border-blue-500 focus:ring-blue-500" />
+                        </div>
+
+                        <button type="button" @onclick="SaveChanges" class="mt-4 w-full rounded-lg bg-blue-700 px-5 py-3 text-sm font-bold text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300">
+                            Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="mt-10 text-center text-gray-500">Vehicle not found.</div>
+    }
+
+</div>
+
+<style>
+    .perspective-1000 {
+        perspective: 1000px;
+    }
+
+    .transform-style-3d {
+        transform-style: preserve-3d;
+    }
+
+    .backface-hidden {
+        backface-visibility: hidden;
+    }
+
+    .rotate-y-180 {
+        transform: rotateY(180deg);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Vehicle? vehicle;
+    private bool isLoading = true;
+    private bool isCardFlipped = false;
+
+    // Tab State Management
+    private string activeTab = "Tasks";
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+
+        // Artificial delay so you can see your skeleton loader
+        await Task.Delay(400);
+
+        // TODO: You need to add this method to your IVehicleService to fetch a single vehicle by its Id!
+        // vehicle = await VehicleService.GetVehicleByIdAsync(id);
+
+        // For now, let's create a mock vehicle so the UI renders while you build the backend method:
+        vehicle = new Vehicle("Toyota", "Civic", "Black Pearl", "ABC 1234", "VIN9876543210", 48500, DateTime.Now)
+        {
+            Type = "Car",
+            PrimaryColor = "#111827", // Default Dark Slate
+            SecondaryColor = "#1F2937",
+            AccentColor = "#3B82F6"   // Blue highlight
+        };
+
+        isLoading = false;
+    }
+
+    private void ToggleCardFlip()
+    {
+        isCardFlipped = !isCardFlipped;
+    }
+
+
+    private bool isEditing = false;
+    private string editNickname = "";
+    private string editPlateNumber = "";
+    private string editVin = "";
+    private string editDistanceUnit = "km";
+    private string editPrimaryColor = "#000000";
+    private string editSecondaryColor = "#FFFFFF";
+    private string editAccentColor = "#FF0000";
+    private void OpenEditModal()
+    {
+        if (vehicle == null) return;
+
+        // Populate the form with current values
+        editNickname = vehicle.Nickname;
+        editPlateNumber = vehicle.PlateNumber;
+        editVin = vehicle.SerialOrVinNumber;
+        editDistanceUnit = vehicle.DistanceUnit;
+        editPrimaryColor = vehicle.PrimaryColor;
+        editSecondaryColor = vehicle.SecondaryColor;
+        editAccentColor = vehicle.AccentColor;
+
+        isEditing = true;
+    }
+
+    private void CloseEditModal()
+    {
+        isEditing = false;
+    }
+
+    private async Task SaveChanges()
+    {
+        if (vehicle == null) return;
+
+        // Use your clean DDD methods to update the entity
+        vehicle.UpdateNickname(editNickname);
+        vehicle.UpdatePlateNumber(editPlateNumber);
+        vehicle.UpdateSerialOrVinNumber(editVin);
+        vehicle.UpdateDistanceUnit(editDistanceUnit);
+        vehicle.UpdateColorScheme(editPrimaryColor, editSecondaryColor, editAccentColor);
+
+        // TODO: Save to the database!
+        // await VehicleService.UpdateVehicleAsync(vehicle);
+
+        // Close the modal and force UI refresh
+        isEditing = false;
+        StateHasChanged();
+    }
+}

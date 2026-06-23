@@ -1,134 +1,192 @@
-﻿@page "/upload"
+﻿@page "/add-vehicle"
+@using Me.App.Core.VehicleAggregate
 @using Me.App.Core.DocumentsAgg
 @using Me.App.Infrastructure
-@inject IDocumentService DocumentService
+@inject IVehicleService VehicleService
 @inject NavigationManager NavManager
 @layout SubPageLayout
-<div class="flex flex-col gap-4 pb-10">
-    <h1 class="text-2xl font-bold text-gray-800">Add Document</h1>
-    <p class="text-sm text-gray-500">Securely store your ID, forms, or certificates offline.</p>
 
-    <div class="mt-2 flex flex-col gap-3">
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Document Title</label>
-            <input @bind="docTitle" type="text" placeholder="e.g., PhilHealth ID" class="mt-1 block w-full rounded-xl border border-gray-300 p-3 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+<div class="flex flex-col gap-4 px-4 pb-10">
+    <h1 class="text-2xl font-bold text-gray-900">Add Vehicle</h1>
+    <p class="text-sm text-gray-500">Register your car or motorcycle to start tracking maintenance.</p>
+
+    <form class="mt-4 flex flex-col gap-5" @onsubmit:preventDefault>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="vehicleType" class="mb-2 block text-sm font-medium text-gray-900">Type</label>
+                <select id="vehicleType" @bind="vehicleType" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500">
+                    <option value="Car">Car</option>
+                    <option value="Motorcycle">Motorcycle</option>
+                    <option value="Bicycle">Bicycle</option>
+                </select>
+            </div>
+            <div>
+                <label for="brand" class="mb-2 block text-sm font-medium text-gray-900">Brand</label>
+                <input type="text" id="brand" @bind="brand" placeholder="e.g., Toyota" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500" required />
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="modelName" class="mb-2 block text-sm font-medium text-gray-900">Model</label>
+                <input type="text" id="modelName" @bind="modelName" placeholder="e.g., Civic" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500" required />
+            </div>
+            <div>
+                <label for="nickname" class="mb-2 block text-sm font-medium text-gray-900">Nickname</label>
+                <input type="text" id="nickname" @bind="nickname" placeholder="e.g., Black Pearl" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500" />
+            </div>
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Category</label>
-            <select @bind="docCategory" class="mt-1 block w-full rounded-xl border border-gray-300 p-3 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
-                <option value="">Select Category...</option>
-                <option value="Government">Government ID / Forms</option>
-                <option value="Academics">Academics</option>
-                <option value="Professional">Professional / Work</option>
-            </select>
+            <label for="plateNumber" class="mb-2 block text-sm font-medium text-gray-900">Plate Number</label>
+            <input type="text" id="plateNumber" @bind="plateNumber" placeholder="e.g., ABC 1234" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 uppercase focus:border-blue-500 focus:ring-blue-500" />
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Notes / Content</label>
-            <textarea @bind="docContent" rows="3" placeholder="Any extra details..." class="mt-1 block w-full rounded-xl border border-gray-300 p-3 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"></textarea>
+            <label for="serialNumber" class="mb-2 block text-sm font-medium text-gray-900">VIN / Serial Number</label>
+            <input type="text" id="serialNumber" @bind="serialNumber" placeholder="Found on chassis or OR/CR" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 uppercase focus:border-blue-500 focus:ring-blue-500" />
         </div>
 
-        <div class="mt-2">
-            <label class="mb-1 block text-sm font-medium text-gray-700">Attachment</label>
-            <button @onclick="PickFileAsync" class="w-full rounded-xl border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:bg-gray-50">
-                @if (selectedFileResult == null)
-                {
-                    <span class="text-gray-500">Tap to browse files or snap a photo</span>
-                }
-                else
-                {
-                    <span class="font-semibold text-green-600">File attached: @selectedFileResult.FileName</span>
-                }
-            </button>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="odometer" class="mb-2 block text-sm font-medium text-gray-900">Current Odometer</label>
+                <div class="relative">
+                    <input type="number" id="odometer" @bind="currentOdometer" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 pr-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500" required />
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                        <span class="text-sm text-gray-500">km</span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label for="boughtDate" class="mb-2 block text-sm font-medium text-gray-900">Date Acquired</label>
+                <input type="date" id="boughtDate" @bind="boughtDate" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500" />
+            </div>
         </div>
 
-        <button @onclick="SaveDocumentAsync" disabled="@isSaving" class="mt-6 w-full rounded-full bg-gray-800 p-4 font-bold text-white shadow-lg transition-transform hover:bg-gray-900 active:scale-95 disabled:bg-gray-400">
-            @if (isSaving)
-            {
-                <span>Encrypting & Saving...</span>
-            }
-            else
-            {
-                <span>Save to Secure Vault</span>
-            }
-        </button>
+        <div class="mt-2 flex w-full items-center justify-center" @onclick="PickFilesAsync">
+            <label for="dropzone-file" class="flex h-40 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:bg-gray-100">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    @if (selectedFiles == null || !selectedFiles.Any())
+                    {
+                        <svg class="mb-4 h-8 w-8 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2" />
+                        </svg>
+                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Tap to upload</span> OR/CR</p>
+                        <p class="text-xs text-gray-500">Photos or PDF allowed</p>
+                    }
+                    else
+                    {
+                        <svg class="mb-4 h-8 w-8 text-green-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5" />
+                        </svg>
+                        <p class="text-sm font-semibold text-green-600">@selectedFiles.Count file(s) attached</p>
+                    }
+                </div>
+            </label>
+        </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <p class="mt-2 text-center text-sm text-red-500">@errorMessage</p>
+            <div class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800" role="alert">
+                <span class="font-medium">Error!</span> @errorMessage
+            </div>
         }
-    </div>
+
+        <button type="button" @onclick="SaveVehicleAsync" disabled="@isSaving" class="mt-4 mb-8 flex items-center justify-center gap-2 rounded-lg bg-blue-700 px-5 py-4 text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none disabled:cursor-not-allowed disabled:bg-blue-400">
+            @if (isSaving)
+            {
+                <svg aria-hidden="true" class="h-5 w-5 animate-spin fill-white text-gray-200" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" /><path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill" /></svg>
+                <span>Parking in Garage...</span>
+            }
+            else
+            {
+                <span>Save Vehicle to Garage</span>
+            }
+        </button>
+
+    </form>
 </div>
 
 @code {
-    private string docTitle = "";
-    private string docCategory = "";
-    private string docContent = "";
+    // Form Binding Variables
+    private string vehicleType = "Car";
+    private string brand = "";
+    private string modelName = "";
+    private string nickname = "";
+    private string plateNumber = "";
+    private string serialNumber = "";
+    private double currentOdometer = 0;
+    private DateTime boughtDate = DateTime.Today;
+
     private string errorMessage = "";
     private bool isSaving = false;
 
-    // MAUI specific class to hold the picked file in memory
-    private FileResult? selectedFileResult;
+    private List<FileResult> selectedFiles = new();
 
-    private async Task PickFileAsync()
+    private async Task PickFilesAsync()
     {
         try
         {
-            // Opens the native device file picker (works on Android, iOS, Windows, Mac)
-            selectedFileResult = await FilePicker.Default.PickAsync(new PickOptions
+            var results = await FilePicker.Default.PickMultipleAsync(new PickOptions
             {
-                PickerTitle = "Select a Document or Image"
+                PickerTitle = "Select OR/CR Documents or Photos"
             });
+
+            if (results != null && results.Any())
+            {
+                selectedFiles.AddRange(results);
+            }
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to pick file: " + ex.Message;
+            errorMessage = "Failed to pick files: " + ex.Message;
         }
     }
 
-    private async Task SaveDocumentAsync()
+    private async Task SaveVehicleAsync()
     {
-        if (string.IsNullOrWhiteSpace(docTitle))
+        if (string.IsNullOrWhiteSpace(brand) || string.IsNullOrWhiteSpace(modelName))
         {
-            errorMessage = "Title is required.";
+            errorMessage = "Brand and Model are required.";
             return;
         }
 
         isSaving = true;
         errorMessage = "";
-        StateHasChanged(); // Force UI update to show loading state
+        StateHasChanged();
 
         try
         {
-            // 1. Create the main Document Entity
-            var newDocument = new Document(docTitle, docContent, docCategory);
-
-            // 2. Handle the file attachment (Blob) if the user picked one
-            if (selectedFileResult != null)
+ 
+            var newVehicle = new Vehicle(brand, modelName, nickname, plateNumber, serialNumber, currentOdometer, boughtDate)
             {
-                // We MUST copy the file from the public gallery into the app's secure internal storage
-                string secureLocalPath = Path.Combine(FileSystem.AppDataDirectory, selectedFileResult.FileName);
+                Type = vehicleType
+            };
 
-                using (var stream = await selectedFileResult.OpenReadAsync())
-                using (var newStream = File.OpenWrite(secureLocalPath))
+            if (selectedFiles != null && selectedFiles.Any())
+            {
+                var orcrDoc = new Document();
+                foreach (var file in selectedFiles)
                 {
-                    await stream.CopyToAsync(newStream);
+                    string secureLocalPath = Path.Combine(FileSystem.AppDataDirectory, file.FileName);
+                    using (var stream = await file.OpenReadAsync())
+                    using (var newStream = File.OpenWrite(secureLocalPath))
+                    {
+                        await stream.CopyToAsync(newStream);
+                    }
+                    var blob = new Blob();
+                    orcrDoc.AddBlob(blob);
                 }
-
-                // Create the Blob entity and attach it to the Document
-                var blob = new Blob(secureLocalPath, secureLocalPath, selectedFileResult.ContentType); // 0 because DocumentId is set inside AddBlob/Database logic
-
-                newDocument.AddBlob(blob);
+                newVehicle.AttachDocument(orcrDoc);
             }
 
-            // 3. Save to the Encrypted SQLite Database
-            await DocumentService.SaveDocumentAsync(newDocument);
+            await VehicleService.SaveVehicleAsync(newVehicle);
             NavManager.NavigateTo("/");
         }
         catch (Exception ex)
         {
-            errorMessage = "Error saving document: " + ex.Message;
+            errorMessage = "Error saving vehicle: " + ex.Message;
         }
         finally
         {

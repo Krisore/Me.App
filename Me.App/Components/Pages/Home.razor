@@ -1,15 +1,15 @@
 ﻿@page "/"
-@using Me.App.Core.DocumentsAgg
+@using Me.App.Core.VehicleAggregate
 @using Me.App.Core.UserAgg
 @using Me.App.Infrastructure
-@inject IDocumentService DocumentService
+@inject IVehicleService VehicleService
 @inject IUserService UserService
 @inject NavigationManager NavManager
 
 @if (_isCheckingProfile)
 {
     <div class="flex h-full items-center justify-center">
-        <div class="animate-pulse text-gray-400">Opening Vault...</div>
+        <div class="animate-pulse text-gray-400">Opening Garage...</div>
     </div>
 }
 else
@@ -17,92 +17,95 @@ else
     <div class="flex flex-col gap-6 pb-10">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm text-gray-500">Good morning,</p>
-                <h1 class="text-2xl font-bold text-gray-800">Your Digital Vault</h1>
+                <p class="text-sm text-gray-500">Good morning, @_userProfile?.Nickname</p>
+                <h1 class="text-2xl font-bold text-gray-800">Your Garage</h1>
             </div>
         </div>
 
-        <div class="perspective-1000 w-full" @onclick="ToggleCardFlip">
-            <div class="transform-style-3d relative h-56 w-full transition-transform duration-700 @(isCardFlipped ? "rotate-y-180" : "")">
+        @* THE GARAGE DOOR ANIMATION *@
+        <div class="relative h-56 w-full cursor-pointer overflow-hidden rounded-2xl shadow-2xl shadow-gray-200" @onclick="ToggleGarage">
 
-                <div class="bg-gradient-to-br absolute inset-0 rounded-2xl from-gray-900 via-gray-800 to-black p-6 text-white shadow-xl backface-hidden">
-                    <div class="flex h-full flex-col justify-between">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <h2 class="text-xl font-bold tracking-widest">.ME IDENTITY</h2>
-                                <p class="text-xs text-gray-400">Tap to flip</p>
-                            </div>
+            <div class="absolute inset-0 overflow-hidden bg-black">
 
-                            <div class="h-14 w-14 overflow-hidden rounded-full border-2 border-gray-600 bg-white/10 backdrop-blur-sm">
-                                @if (!string.IsNullOrEmpty(_userProfile?.ProfileImagePath))
-                                {
-                                    <img src="@_userProfile.ProfileImagePath" class="h-full w-full object-cover" alt="User Avatar" />
-                                }
-                            </div>
-                        </div>
+                <img src="./_assets/pixel-garage.png" alt="Garage Interior" class="absolute inset-0 h-full w-full object-cover" />
 
-                        <div>
-                            <p class="text-lg font-semibold tracking-wide">
-                                @(string.IsNullOrWhiteSpace(_userProfile?.Nickname) ? "YOUR NAME" : _userProfile.Nickname.ToUpper())
-                            </p>
-                            <p class="font-mono text-sm text-gray-400">ID: ME-@(_userProfile?.Id.ToString("D4") ?? "0000")</p>
-                        </div>
+                <div class="absolute bottom-[0px] left-[295px] z-10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                     @onclick:stopPropagation="true"
+                     @onclick="PokeMechanic">
+
+                    <div class="absolute -top-12 left-0 w-36 rounded-lg bg-white p-2 text-center shadow-xl transition-all duration-300 @(showMechanicTip ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0 pointer-events-none")">
+                        <p class="font-headline leading-tight font-bold text-[10px] text-gray-800">
+                            @currentTip
+                        </p>
+                        <div class="absolute -bottom-1 left-6 h-2 w-2 rotate-45 bg-white"></div>
                     </div>
-                </div>
 
-                <div class="absolute inset-0 flex rotate-y-180 items-center justify-between rounded-2xl border-2 border-gray-100 bg-white p-6 shadow-xl backface-hidden">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-gray-800">Scan to Verify</h3>
-                        <p class="mt-1 text-xs text-gray-500">This QR contains your verified public profile.</p>
-                    </div>
-                    <div class="flex h-24 w-24 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 p-2">
-                        <svg class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                    </div>
+                    <img src="./_assets/mechanic.png" class="h-20 w-auto drop-shadow-2xl" alt="Mechanic Mascot" />
                 </div>
 
             </div>
-        </div>
 
+            <div class="garage-door-texture absolute inset-0 z-20 flex flex-col items-center justify-center border-b-8 border-gray-900 transition-transform duration-700 ease-in-out @(isGarageOpen ? "-translate-y-full" : "translate-y-0")">
+                <div class="mb-4 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 shadow-inner">
+                    <svg class="h-6 w-6 text-gray-400 @(isGarageOpen ? "hidden" : "block")" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-black tracking-widest text-gray-300 drop-shadow-md">YOUR GARAGE</h3>
+                <p class="mt-1 animate-pulse text-xs font-bold tracking-widest text-blue-400">TAP TO OPEN</p>
+            </div>
+
+        </div>
+        @* VEHICLE LIST SECTION *@
         <div class="mt-4 flex flex-col gap-4">
             <div class="flex items-center justify-between">
-                <h2 class="text-lg font-bold text-gray-800">Recent Documents</h2>
+                <h2 class="text-lg font-bold text-gray-800">Listed Vehicles</h2>
                 <button class="text-sm font-semibold text-blue-600">View All</button>
             </div>
 
-            @if (recentDocuments == null)
+            @if (_userVehicles == null)
             {
                 <div class="flex animate-pulse flex-col gap-3">
                     <div class="h-20 w-full rounded-xl bg-gray-200"></div>
                     <div class="h-20 w-full rounded-xl bg-gray-200"></div>
                 </div>
             }
-            else if (!recentDocuments.Any())
+            else if (!_userVehicles.Any())
             {
                 <div class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 py-10">
                     <svg class="mb-3 h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    <p class="text-sm font-medium text-gray-500">Your vault is empty</p>
-                    <a href="/upload" class="mt-2 text-sm font-bold text-blue-600">Add a document</a>
+                    <p class="text-sm font-medium text-gray-500">Your garage is empty</p>
+                    <a href="/upload" class="mt-2 text-sm font-bold text-blue-600">Add a vehicle</a>
                 </div>
             }
             else
             {
                 <div class="flex flex-col gap-3">
-                    @foreach (var doc in recentDocuments.Take(5))
+                    @foreach (var vehicle in _userVehicles)
                     {
-                        <div class="transition-active flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm active:scale-95">
+                        <div @onclick="() => NavigateToVehicle(vehicle.Id)" class="transition-active flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm active:scale-95">
                             <div class="flex items-center gap-4">
-                                <div class="bg-opacity-10 flex h-12 w-12 items-center justify-center @(GetCategoryColor(doc.Category)) rounded-full">
-                                    <svg class="h-6 w-6 @(GetCategoryTextColor(doc.Category))" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                                    </svg>
+                                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
+                                    @if (vehicle.Type?.ToLower() == "motorcycle" || vehicle.Type?.ToLower() == "bike")
+                                    {
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h8M8 11h8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                    }
                                 </div>
                                 <div>
-                                    <h3 class="line-clamp-1 font-bold text-gray-800">@doc.Title</h3>
-                                    <p class="text-xs text-gray-500">@doc.Category • @doc.CreatedAt.ToString("MMM dd, yyyy")</p>
+                                    <h3 class="line-clamp-1 font-bold text-gray-800">
+                                        @(string.IsNullOrWhiteSpace(vehicle.Nickname) ? $"{vehicle.Brand} {vehicle.Name}" : vehicle.Nickname)
+                                    </h3>
+                                    <p class="text-xs text-gray-500">Plate: @vehicle.PlateNumber • ODO: @vehicle.CurrentOdometer.ToString("N0") @vehicle.DistanceUnit</p>
                                 </div>
                             </div>
                         </div>
@@ -114,6 +117,13 @@ else
 }
 
 <style>
+
+    .garage-door-texture {
+        background-color: #374151; /* Tailwind gray-700 */
+        background-image: repeating-linear-gradient( to bottom, transparent, transparent 24px, rgba(0, 0, 0, 0.4) 24px, rgba(0, 0, 0, 0.4) 26px );
+        box-shadow: inset 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    }
+
     .perspective-1000 {
         perspective: 1000px;
     }
@@ -133,49 +143,73 @@ else
 
 @code {
     private bool _isCheckingProfile = true;
-    private bool isCardFlipped = false;
-    private List<Document>? recentDocuments;
 
-    // We added this variable to hold the user's data!
     private User? _userProfile;
+
+    // Updated to use the new Vehicle entity
+    private List<Vehicle>? _userVehicles;
+    private Vehicle? _primaryVehicle => _userVehicles?.FirstOrDefault();
 
     protected override async Task OnInitializedAsync()
     {
         _isCheckingProfile = true;
         await Task.Delay(300);
 
-        // Fetch and store the profile
+        // Fetch User
         _userProfile = await UserService.GetUserAsync();
 
         if (_userProfile == null)
         {
-            await Task.Delay(50); // Keep our MAUI micro-delay hack to prevent crashes
+            await Task.Delay(50);
             NavManager.NavigateTo("/welcome", true);
             return;
         }
 
-        recentDocuments = await DocumentService.GetAllDocumentsAsync();
+        // Fetch all vehicles from the newly pivoted database
+        _userVehicles = await VehicleService.GetVehiclesAsync();
+        if(_userVehicles.Any())
+        {
+            isGarageOpen = true;
+        }
+
         _isCheckingProfile = false;
     }
 
-    private void ToggleCardFlip()
+    private bool isGarageOpen = false;
+
+    // Rename this method
+    private void ToggleGarage()
     {
-        isCardFlipped = !isCardFlipped;
+        isGarageOpen = !isGarageOpen;
     }
 
-    private string GetCategoryColor(string category) => category switch
+
+    private void NavigateToVehicle(int id)
     {
-        "Government" => "bg-blue-500",
-        "Academics" => "bg-purple-500",
-        "Professional" => "bg-green-500",
-        _ => "bg-gray-500"
+        NavManager.NavigateTo($"/vehicle/{id}", true);
+    }
+    private bool showMechanicTip = false;
+    private string currentTip = "Check tire pressure!";
+
+    private List<string> mechanicTips = new()
+    {
+        "Don't skip that oil change!",
+        "Check your tire pressure.",
+        "Brake pads looking thin?",
+        "Clean your air filter soon.",
+        "Chain needs lubing!"
     };
 
-    private string GetCategoryTextColor(string category) => category switch
+    private async Task PokeMechanic()
     {
-        "Government" => "text-blue-500",
-        "Academics" => "text-purple-500",
-        "Professional" => "text-green-500",
-        _ => "text-gray-500"
-    };
+        var random = new Random();
+        currentTip = mechanicTips[random.Next(mechanicTips.Count)];
+
+        showMechanicTip = true;
+        StateHasChanged();
+
+        await Task.Delay(3000); // Bubble disappears after 3 seconds
+        showMechanicTip = false;
+        StateHasChanged();
+    }
 }

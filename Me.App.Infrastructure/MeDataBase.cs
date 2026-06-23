@@ -1,21 +1,17 @@
-﻿using SQLite;
-using Me.App.Core.DocumentsAgg;
+﻿using Me.App.Core.DocumentsAgg;
 using Me.App.Core.Security;
 using Me.App.Core.UserAgg;
+using Me.App.Core.VehicleAggregate;
+using SQLite;
 
 namespace Me.App.Infrastructure;
 
-public class MeDataBase
+public class MeDataBase(IDatabaseKeyProvider keyProvider, string dbPath)
 {
     private SQLiteAsyncConnection? _db;
-    private readonly IDatabaseKeyProvider _keyProvider;
-    private readonly string _dbPath;
+    private readonly IDatabaseKeyProvider _keyProvider = keyProvider;
+    private readonly string _dbPath = dbPath;
 
-    public MeDataBase(IDatabaseKeyProvider keyProvider, string dbPath)
-    {
-        _keyProvider = keyProvider;
-        _dbPath = dbPath;
-    }
     public async Task<SQLiteAsyncConnection> GetConnectionAsync()
     {
         if (_db != null) return _db;
@@ -29,6 +25,8 @@ public class MeDataBase
         await _db.CreateTableAsync<User>();
         await _db.CreateTableAsync<Document>();
         await _db.CreateTableAsync<Blob>();
+        await _db.CreateTableAsync<Vehicle>();
+        await _db.CreateTableAsync<MaintenanceTask>();
 
         return _db;
     }
